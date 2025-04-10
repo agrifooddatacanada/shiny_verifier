@@ -1,8 +1,0 @@
-Package: shiny_verifier
-Title: Shiny Verifier Application
-Version: 0.1.0
-Imports:
-    bs4Dash,
-    shiny,
-    shinyjs,
-    shinyWidgets 

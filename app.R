@@ -3,8 +3,11 @@ library(shiny)
 library(shinyjs)
 library(shinyWidgets)
 
-# Get Azure URL from environment variable
-azure_url <- Sys.getenv("REACT_APP_URL")
+# Get Composer URL from environment variable
+composer_url <- Sys.getenv("OCA_COMPOSER_URL")
+if (composer_url == "") {
+  stop("OCA_COMPOSER_URL environment variable is not set. Please set it in your .Renviron file.")
+}
 
 # Format folder names for dropdown display
 format_schema_name <- function(name) {
@@ -108,18 +111,18 @@ ui <- dashboardPage(
     ),
     
     tags$script(HTML("
-      // Send data to React
+      // Send data to Composer
       Shiny.addCustomMessageHandler('sendData', function(data) {
         const iframe = document.getElementById('reactAppIframe');
         if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage(data, '", azure_url, "'); // production
+          iframe.contentWindow.postMessage(data, '", composer_url, "');
         }
       });
 
-      // Receive validated data from React
+      // Receive verified data from Composer
       window.addEventListener('message', function(event) {
-      // Check if the message is from our React app
-      if (event.origin === '", azure_url, "') { //production
+      // Check if the message is from our Composer app
+      if (event.origin === '", composer_url, "') {
         if (event.data.type === 'validatedData') {
           // Send the validated data back to Shiny server
           Shiny.setInputValue('validated_data', {
@@ -160,7 +163,7 @@ server <- function(input, output, session) {
       tagList(
         tags$iframe(
           id = "reactAppIframe",
-          src = paste0(azure_url, "/oca-data-validator"), #production
+          src = paste0(composer_url, "/oca-data-validator"),
           height = "2000px",
           width = "100%",
           style = "border: none; border-radius: 10px; overflow: hidden; background-color: white;"
