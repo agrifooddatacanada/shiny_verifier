@@ -1,0 +1,1 @@
+{"type":"spec/capture_base/1.0","digest":"EVnvZJj9NrgJcyjB9Hltx6r1w1fi20mVG23vv7eI2sC8","classification":"CRDC:RDF40","attributes":{"analysisDate":"DateTime","collectionDate":"DateTime","insectCount":"Numeric","insectType":"Numeric","insectWeight":"Array[Numeric]","location":"Text"},"flagged_attributes":[]}
