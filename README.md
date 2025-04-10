@@ -33,7 +33,7 @@ The application uses a modern UI built with `bs4Dash` and integrates with the [O
 
 1. Clone the repository:
 ```bash
-git clone [git@github.com:agrifooddatacanada/shiny_verifier.git]
+git clone https://github.com/agrifooddatacanada/shiny_verifier.git
 ```
 
 2. Restore the project dependencies using renv:
