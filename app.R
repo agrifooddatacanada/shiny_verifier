@@ -4,9 +4,18 @@ library(shinyjs)
 library(shinyWidgets)
 
 # Get Composer URL from environment variable
+renviron_path <- file.path(getwd(), ".Renviron")
+if (!file.exists(renviron_path)) {
+  stop("Could not find .Renviron file at: ", renviron_path, "\n",
+       "Please create the file and set the OCA_COMPOSER_URL environment variable.")
+}
+
+readRenviron(renviron_path)
 composer_url <- Sys.getenv("OCA_COMPOSER_URL")
 if (composer_url == "") {
-  stop("OCA_COMPOSER_URL environment variable is not set. Please set it in your .Renviron file.")
+  stop("OCA_COMPOSER_URL environment variable is not set in .Renviron file.\n",
+       "Please add the following line to ", renviron_path, ":\n",
+       "OCA_COMPOSER_URL=[your-composer-url]")
 }
 
 # Format folder names for dropdown display
