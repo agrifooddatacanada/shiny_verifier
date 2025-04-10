@@ -47,7 +47,7 @@ renv::restore()
 
 3. Create a `.Renviron` file in the project root with the following content:
 ```
-REACT_APP_URL=[your-verifier-url]
+OCA_COMPOSER_URL=[your-composer-url]
 ```
 Note: Only include the base URL in the `.Renviron` file. The `/oca-data-validator` path is automatically appended in the application code.
 

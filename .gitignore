@@ -48,8 +48,9 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-# Renv folder
+# Renv folder (except activate.R)
 renv/
+!renv/activate.R
 
 # MacOS files
 .DS_Store
