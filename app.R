@@ -18,16 +18,14 @@ if (composer_url == "") {
        "OCA_COMPOSER_URL=[your-composer-url]")
 }
 
-# Format folder names for dropdown display
-format_schema_name <- function(name) {
-  name <- gsub("_", " ", name)
-  name <- tools::toTitleCase(name)
-  return(name)
-}
+# Load schema mapping from config file
+schema_config <- jsonlite::fromJSON("config/schemas.json")
 
-# List schema folders and create dropdown choices
-schema_folder_names <- list.dirs(path = "Test Schemas", full.names = FALSE, recursive = FALSE)
-schema_choices <- setNames(c("", schema_folder_names), c("Select a Schema", sapply(schema_folder_names, format_schema_name)))
+# Create dropdown choices from the mapping
+schema_choices <- list()
+for (file_id in names(schema_config)) {
+  schema_choices[schema_config[[file_id]]$name] <- file_id
+}
 
 ui <- dashboardPage(
   title = "Shiny Verifier",
@@ -49,7 +47,7 @@ ui <- dashboardPage(
   ),
   
   dashboardSidebar(
-    collapsed = F,
+    collapsed = T,
     minified = F,
     elevation = 1,
     fixed = F,
@@ -68,16 +66,60 @@ ui <- dashboardPage(
     # Activate ShinyJS library
     useShinyjs(),
     tags$style(".nav-pills .nav-link.active {color: #fff; background-color: #dc3545;}"),
+    
+    tags$script(
+    HTML("
+      Shiny.addCustomMessageHandler('json2iframe', function(message) {
+        try {
+          var iframe_id = 'OCA_Composer_iframe';
+          var iframe = document.getElementById(iframe_id);
+          if (iframe && iframe.contentWindow) {
+            // Reload the iframe first
+            console.log('shiny: reloading iframe. iframe_id:', iframe_id, 'iframe.src:', iframe.src)
+            iframe.src = iframe.src;
+            
+            // Wait for iframe to reload, then send the message
+            iframe.onload = function() {
+              try {
+                console.log('shiny: sending schema. message:', message)
+                setTimeout(function() {
+                  try {
+                    iframe.contentWindow.postMessage(
+                      {
+                        type: 'JSON_SCHEMA',
+                        data: message.data
+                      },
+                      '*'
+                    );
+                    console.log('shiny: schema sent')
+                  } catch (postMessageError) {
+                    console.error('shiny: Error sending postMessage:', postMessageError)
+                  }
+                }, 1000); // Wait 1 second for iframe to fully load
+              } catch (onloadError) {
+                console.error('shiny: Error in onload handler:', onloadError)
+              }
+            };
+          } else {
+            console.error('shiny: iframe or iframe.contentWindow not found. iframe_id provided:', iframe_id)
+          }
+        } catch (error) {
+          console.error('shiny: Error in json2iframe handler:', error)
+        }
+      });
+    ")
+    ),
+    
     tabItems(
       tabItem(
         tabName = "app",
-                
+        
         tagList(
           column(12,
                  fluidRow(
                    column(12,
-                          img(src = "UoG_logo.png", height = "80px", align = "left"),
-                          img(src = "FOFR1002_ADC_Logo_Colour_Short.png", height = "80px", align = "right")
+                          img(src = "UoG_logo.png", height = "80px", align = "left", style = "margin-top: 10px;"),
+                          img(src = "FOFR1002_ADC_Logo_Colour_Short.png", height = "100px", align = "right")
                    )
                  )
           ),
@@ -87,63 +129,44 @@ ui <- dashboardPage(
                    box(
                      title = tagList(icon("upload"), "Upload"),
                      width = 12,
-                     collapsible = F,
+                     collapsible = T,
                      elevation = 2,
                      solidHeader = F,
                      status = "danger",
                      p("Disclaimer placeholder will go here"),
                      
-                     selectInput("schema_choice", "Select a Local Schema", choices = schema_choices, selected = ""),
-                     actionButton("submit_schema", "Submit")
+                     selectInput("schema_choice", "Select a target table", choices = schema_choices),
+                     actionButton("submit_schema", "Start data verification")
                    )   
             )
           ),
           fluidRow(
             column(12,
-                   shinyjs::hidden(
+                   # shinyjs::hidden(
                      div(id = "hidden_iframe",
                          box(
                            title = tagList(icon("check-double"), "Verify"),
                            width = 12,
                            collapsible = F,
                            elevation = 2,
+                           maximizable = T,
                            solidHeader = F,
                            status = "danger",
-                           uiOutput("iframe")  # Output for iframe or dropdown
+                           tags$iframe(
+                             id = "OCA_Composer_iframe",
+                             src = paste0(composer_url, "/oca-data-validator"),
+                             height = "1200px",
+                             width = "100%",
+                             style = "border: none; border-radius: 10px; overflow: hidden; background-color: white;"
+                           )
                          )   
-                     )
+                     # )
                    )
             )
           )
         )
       )
-    ),
-    
-    tags$script(HTML("
-      // Send data to Composer
-      Shiny.addCustomMessageHandler('sendData', function(data) {
-        const iframe = document.getElementById('reactAppIframe');
-        if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage(data, '", composer_url, "');
-        }
-      });
-
-      // Receive verified data from Composer
-      window.addEventListener('message', function(event) {
-      // Check if the message is from our Composer app
-      if (event.origin === '", composer_url, "') {
-        if (event.data.type === 'validatedData') {
-          // Send the validated data back to Shiny server
-          Shiny.setInputValue('validated_data', {
-            data: event.data.data,
-            format: event.data.format,
-            keepOriginalHeaders: event.data.keepOriginalHeaders,
-            metadata: event.data.metadata
-          });
-        }
-      }
-    })
-  "))
+    )
   )
 )
 
@@ -155,47 +178,23 @@ server <- function(input, output, session) {
     shinyjs::show("hidden_iframe", anim = T, animType = 'slide')
     
     # Prepare schema data to be sent to Composer
-    selected_schema <- input$schema_choice
-    schema_path <- file.path("Test Schemas", selected_schema)
-    json_files <- list.files(schema_path, pattern = "*.json", full.names = TRUE)
-    json_bundle <- lapply(json_files, jsonlite::fromJSON)
+    selected_file_id <- input$schema_choice
+    schema_path <- schema_config[[selected_file_id]]$path
+    json_file <- jsonlite::fromJSON(schema_path)
     
     # Send selected schema data to the embedded Composer iframe
-    session$sendCustomMessage(type = "message", 
-                              message = list(
-                                data = json_bundle, 
-                                schema = selected_schema
-                              ))
+    session$sendCustomMessage(
+      type = "json2iframe", 
+      message = list(
+        type = "JSON_SCHEMA", 
+        data = json_file
+      ))
     
-    # Display iframe after schema is selected
-    output$iframe <- renderUI({
-      tagList(
-        tags$iframe(
-          id = "reactAppIframe",
-          src = paste0(composer_url, "/oca-data-validator"),
-          height = "2000px",
-          width = "100%",
-          style = "border: none; border-radius: 10px; overflow: hidden; background-color: white;"
-        )
-      )
-    })
   })
   
   observeEvent(input$validated_data, {
-    # Handle the validated data
-    data <- input$validated_data$data
-    format <- input$validated_data$format
-    
-    # Save to internal storage
-    #if (format == "excel") {
-    #  writexl::write_xlsx(data, "path/to/save/validated_data.xlsx")
-    #} else {
-    #  write.csv(data, "path/to/save/validated_data.csv")
-    #}
-    
+    # Logics to handle verified data here
   })
-  
 }
-
 
 shinyApp(ui, server)

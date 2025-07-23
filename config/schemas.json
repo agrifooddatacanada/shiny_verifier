@@ -1,0 +1,10 @@
+{
+  "file1": {
+    "name": "Sensor Aggregation SCR",
+    "path": "schemas/sensor_aggregation_scr_OCA_package.json"
+  },
+  "file2": {
+    "name": "Sensor Health SCR", 
+    "path": "schemas/sensor_health_scr_OCA_package.json"
+  }
+}
