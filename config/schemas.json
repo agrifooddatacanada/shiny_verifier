@@ -6,5 +6,10 @@
   "file2": {
     "name": "Sensor Health SCR", 
     "path": "schemas/sensor_health_scr_OCA_package.json"
+  },
+  
+   "file3": {
+    "name": "Carcass Test", 
+    "path": "schemas/CSV_OCA_package.json"
   }
 }

@@ -68,7 +68,24 @@ ui <- dashboardPage(
     tags$style(".nav-pills .nav-link.active {color: #fff; background-color: #dc3545;}"),
     
     tags$script(
-    HTML("
+      HTML("
+      // message listener for receiving data from iframe
+      
+      window.addEventListener('message', function(event) {
+        // Check the origin of the message for security
+        if (event.origin !== 'https://www.semanticengine.org') {
+          console.log('Message from unknown origin:', event.origin);
+          return;
+        }
+        
+        // Check the type of the message if this is verified data from the validator
+        if (event.data && event.data.type === 'VERIFIED_DATA') {
+          console.log('Received verified data:', event.data.data);
+          // Send the verified data back to Shiny
+          Shiny.setInputValue('validated_data', event.data.data, {priority: 'event'});
+        }
+      });
+      
       Shiny.addCustomMessageHandler('json2iframe', function(message) {
         try {
           var iframe_id = 'OCA_Composer_iframe';
@@ -142,25 +159,23 @@ ui <- dashboardPage(
           ),
           fluidRow(
             column(12,
-                   # shinyjs::hidden(
-                     div(id = "hidden_iframe",
-                         box(
-                           title = tagList(icon("check-double"), "Verify"),
-                           width = 12,
-                           collapsible = F,
-                           elevation = 2,
-                           maximizable = T,
-                           solidHeader = F,
-                           status = "danger",
-                           tags$iframe(
-                             id = "OCA_Composer_iframe",
-                             src = paste0(composer_url, "/oca-data-validator"),
-                             height = "1200px",
-                             width = "100%",
-                             style = "border: none; border-radius: 10px; overflow: hidden; background-color: white;"
-                           )
-                         )   
-                     # )
+                   div(id = "hidden_iframe",
+                       box(
+                         title = tagList(icon("check-double"), "Verify"),
+                         width = 12,
+                         collapsible = F,
+                         elevation = 2,
+                         maximizable = T,
+                         solidHeader = F,
+                         status = "danger",
+                         tags$iframe(
+                           id = "OCA_Composer_iframe",
+                           src = paste0(composer_url, "/oca-data-validator"),
+                           height = "1200px",
+                           width = "100%",
+                           style = "border: none; border-radius: 10px; overflow: hidden; background-color: white;"
+                         )
+                       )   
                    )
             )
           )
@@ -170,31 +185,44 @@ ui <- dashboardPage(
   )
 )
 
+# Define Server
 server <- function(input, output, session) {
-  # Render iframe
+  # Handle schema submission
   observeEvent(input$submit_schema, {
     req(input$schema_choice)
     
-    shinyjs::show("hidden_iframe", anim = T, animType = 'slide')
+    shinyjs::show("hidden_iframe", anim = TRUE, animType = 'slide')
     
-    # Prepare schema data to be sent to Composer
-    selected_file_id <- input$schema_choice
-    schema_path <- schema_config[[selected_file_id]]$path
-    json_file <- jsonlite::fromJSON(schema_path)
-    
-    # Send selected schema data to the embedded Composer iframe
-    session$sendCustomMessage(
-      type = "json2iframe", 
-      message = list(
-        type = "JSON_SCHEMA", 
-        data = json_file
-      ))
-    
+    tryCatch({
+      # Prepare schema data to be sent to Composer
+      selected_file_id <- input$schema_choice
+      schema_path <- schema_config[[selected_file_id]]$path
+      
+      # Read and parse JSON file
+      json_file <- jsonlite::fromJSON(schema_path, simplifyVector = FALSE)
+      
+      # Validate JSON structure before sending
+      if (is.null(json_file)) {
+        showNotification("Error: Invalid JSON file", type = "error")
+        return()
+      }
+      
+      # Send selected schema data to the embedded Composer iframe
+      session$sendCustomMessage(
+        type = "json2iframe",
+        message = list(
+          data = json_file
+        )
+      )
+      
+      showNotification("Schema sent to validator", type = "message")
+      
+    }, error = function(e) {
+      showNotification(paste("Error preparing schema:", e$message), type = "error")
+      cat("Error in submit_schema:", e$message, "\n")
+    })
   })
   
-  observeEvent(input$validated_data, {
-    # Logics to handle verified data here
-  })
 }
 
 shinyApp(ui, server)
