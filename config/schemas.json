@@ -1,4 +1,5 @@
 {
+  
   "file1": {
     "name": "Sensor Aggregation SCR",
     "path": "schemas/sensor_aggregation_scr_OCA_package.json"
@@ -11,5 +12,10 @@
    "file3": {
     "name": "Carcass Test", 
     "path": "schemas/CSV_OCA_package.json"
+  },
+  
+    "file4": {
+    "name": "Milk DHI", 
+    "path": "schemas/milk_dhi_OCA_package.json"
   }
 }

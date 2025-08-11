@@ -2,6 +2,7 @@ library(bs4Dash)
 library(shiny)
 library(shinyjs)
 library(shinyWidgets)
+library(DT)
 
 # Get Composer URL from environment variable
 renviron_path <- file.path(getwd(), ".Renviron")
@@ -73,11 +74,15 @@ ui <- dashboardPage(
       
       window.addEventListener('message', function(event) {
         // Check the origin of the message for security
-        if (event.origin !== 'https://www.semanticengine.org') {
-          console.log('Message from unknown origin:', event.origin);
-          return;
-        }
-        
+      	if (
+                event.origin === 'http://localhost:3000' ||
+                event.origin === 'https://www.semanticengine.org'
+              ) {
+                // allowed origins, do nothing
+              } else {
+                console.log('Message from unknown origin:', event.origin);
+                return;
+              }
         // Check the type of the message if this is verified data from the validator
         if (event.data && event.data.type === 'VERIFIED_DATA') {
           console.log('Received verified data:', event.data.data);
@@ -157,6 +162,27 @@ ui <- dashboardPage(
                    )   
             )
           ),
+          
+          fluidRow(
+            column(12,
+                   div(id = "validated_data_display", style = "display: none;",
+                       box(
+                         title = tagList(icon("table"), "Validated Data"),
+                         width = 12,
+                         collapsible = T,
+                         elevation = 2,
+                         solidHeader = F,
+                         status = "success",
+                         p("Data validation completed successfully."),
+                         DT::dataTableOutput("validated_data_table"),
+                         br(),
+                         downloadButton("download_validated", "Download Validated Data", 
+                                        class = "btn-success")
+                       )
+                   )
+            )
+          ),
+          
           fluidRow(
             column(12,
                    div(id = "hidden_iframe",
@@ -184,45 +210,3 @@ ui <- dashboardPage(
     )
   )
 )
-
-# Define Server
-server <- function(input, output, session) {
-  # Handle schema submission
-  observeEvent(input$submit_schema, {
-    req(input$schema_choice)
-    
-    shinyjs::show("hidden_iframe", anim = TRUE, animType = 'slide')
-    
-    tryCatch({
-      # Prepare schema data to be sent to Composer
-      selected_file_id <- input$schema_choice
-      schema_path <- schema_config[[selected_file_id]]$path
-      
-      # Read and parse JSON file
-      json_file <- jsonlite::fromJSON(schema_path, simplifyVector = FALSE)
-      
-      # Validate JSON structure before sending
-      if (is.null(json_file)) {
-        showNotification("Error: Invalid JSON file", type = "error")
-        return()
-      }
-      
-      # Send selected schema data to the embedded Composer iframe
-      session$sendCustomMessage(
-        type = "json2iframe",
-        message = list(
-          data = json_file
-        )
-      )
-      
-      showNotification("Schema sent to validator", type = "message")
-      
-    }, error = function(e) {
-      showNotification(paste("Error preparing schema:", e$message), type = "error")
-      cat("Error in submit_schema:", e$message, "\n")
-    })
-  })
-  
-}
-
-shinyApp(ui, server)
