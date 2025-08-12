@@ -47,9 +47,19 @@ renv::restore()
 
 3. Create a `.Renviron` file in the project root with the following content:
 ```
-OCA_COMPOSER_URL=[your-composer-url]
+OCA_COMPOSER_URL=[your-oca-composer-url]
 ```
 Note: Only include the base URL in the `.Renviron` file. The `/oca-data-validator` path is automatically appended in the application code.
+
+For example:
+```
+OCA_COMPOSER_URL=https://my-oca-composer-url.ca
+```
+
+Or, if running a dev instance of OCA Composer locally:
+```
+OCA_COMPOSER_URL=http://localhost:3000
+```
 
 ## Usage
 
