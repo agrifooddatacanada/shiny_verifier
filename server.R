@@ -1,18 +1,14 @@
-
-# Load schema mapping from config file (needed for server logic)
-schema_config <- jsonlite::fromJSON("config/schemas.json")
-
 # Define Server
 server <- function(input, output, session) {
-  # Reactive value to store validated data
-  validated_data <- reactiveVal(NULL)
+  # Reactive value to store verified data
+  verified_data <- reactiveVal(NULL)
   
   # Handle schema submission
   observeEvent(input$submit_schema, {
     req(input$schema_choice)
     
-    # Hide validated data display if it was shown before
-    shinyjs::hide("validated_data_display")
+    # Hide verified data display if it was shown before
+    shinyjs::hide("verified_data_display")
     
     # Show the iframe for verification
     shinyjs::show("hidden_iframe", anim = TRUE, animType = 'slide')
@@ -47,64 +43,61 @@ server <- function(input, output, session) {
     })
   })
   
-  # Handle validated data received from iframe
-  observeEvent(input$validated_data, {
+  # Handle verified data received from iframe
+  observeEvent(input$verified_data, {
     
-    # Process the validated CSV data here
-    showNotification("Validated data received successfully!", type = "message")
+    # Process the verified CSV data here
+    showNotification("Verified data received successfully!", type = "message")
     
     # Parse CSV data 
     tryCatch({
-      validated_df <- read.csv(text = input$validated_data, stringsAsFactors = FALSE)
+      verified_df <- read.csv(text = input$verified_data, stringsAsFactors = FALSE)
       
       # Store the data in reactive value
-      validated_data(validated_df)
+      verified_data(verified_df)
       
       # Hide the iframe/verify box 
       shinyjs::hide("hidden_iframe", anim = TRUE, animType = 'slide')
       
-      # Show the validated data display section
-      shinyjs::show("validated_data_display", anim = TRUE, animType = 'slide')
+      # Show the verified data display section
+      shinyjs::show("verified_data_display", anim = TRUE, animType = 'slide')
       
       showNotification(
-        paste0("Validation complete! Loaded ", nrow(validated_df), " rows and ", 
-               ncol(validated_df), " columns."), 
+        paste0("Validation complete! Loaded ", nrow(verified_df), " rows and ", 
+               ncol(verified_df), " columns."), 
         type = "message"
       )
       
     }, error = function(e) {
-      cat("Error parsing validated CSV:", e$message, "\n")
-      showNotification(paste("Error processing validated data:", e$message), type = "error")
+      cat("Error parsing verified CSV:", e$message, "\n")
+      showNotification(paste("Error processing verified data:", e$message), type = "error")
     })
   })
   
   # Render the data table
-  output$validated_data_table <- DT::renderDataTable({
-    req(validated_data())
+  output$verified_data_table <- DT::renderDataTable({
+    req(verified_data())
     
     DT::datatable(
-      validated_data(),
+      verified_data(),
       options = list(
-        pageLength = 10,
+        dom = "tp",
         scrollX = TRUE,
-        dom = 'Bfrtip',
-        buttons = c('copy', 'csv', 'excel'),
         columnDefs = list(list(className = 'dt-center', targets = "_all"))
       ),
-      filter = 'top',
       rownames = FALSE,
-      class = 'cell-border stripe'
+      class = 'row-border stripe compact nowrap'
     )
   })
   
-  # Download handler for validated data
-  output$download_validated <- downloadHandler(
+  # Download handler for verified data
+  output$download_verified <- downloadHandler(
     filename = function() {
-      paste0("validated_data_", Sys.Date(), ".csv")
+      paste0("varified_data_", Sys.Date(), ".csv")
     },
     content = function(file) {
-      req(validated_data())
-      write.csv(validated_data(), file, row.names = FALSE)
+      req(verified_data())
+      write.csv(verified_data(), file, row.names = FALSE)
     }
   )
 }
