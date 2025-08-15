@@ -1,0 +1,2 @@
+# This file ensures the upload_files folder structure is preserved in git
+# while the generated CSV files are ignored via .gitignore
