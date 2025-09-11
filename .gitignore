@@ -54,3 +54,7 @@ renv/
 
 # MacOS files
 .DS_Store
+
+# Generated upload files - keep only parent folder, ignore all contents
+upload_files/*
+!upload_files/.gitkeep
