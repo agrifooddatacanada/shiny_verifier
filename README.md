@@ -12,7 +12,7 @@ The Shiny Verifier is a web application that allows users to:
 - View verification results in an interactive interface
 - Automatically save verified data with organized file structure
 
-The application uses a modern UI built with `bs4Dash` and integrates with the [OCA Composer](https://github.com/agrifooddatacanada/OCA_Composer/tree/white_label) for data verification. OCA (Overlays Capture Architecture) is an international open standard for writing data schemas, developed by the Human Colossus Foundation.
+The application uses a modern UI built with `bs4Dash` and integrates with the [OCA Composer](https://github.com/agrifooddatacanada/OCA_Composer) for data verification. OCA (Overlays Capture Architecture) is an international open standard for writing data schemas, developed by the Human Colossus Foundation.
 
 ## Features
 
@@ -92,7 +92,7 @@ Or, if running a dev instance of OCA Composer locally:
 OCA_COMPOSER_URL=http://localhost:3000
 ```
 
-Note: Only include the base URL in the `.Renviron` file. The `/oca-data-validator` path is automatically appended in the application code.
+Note: Only include the base URL in the `.Renviron` file. The `/oca-data-verifier` path is automatically appended in the application code.
 
 ## Usage
 

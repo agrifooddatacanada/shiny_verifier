@@ -155,7 +155,7 @@ ui <- dashboardPage(
                            status = "danger",
                            tags$iframe(
                              id = "OCA_Composer_iframe",
-                             src = paste0(composer_url, "/oca-data-validator"),
+                             src = paste0(composer_url, "/oca-data-verifier"),
                              height = "1200px",
                              width = "100%",
                              style = "border: none; border-radius: 10px; overflow: hidden; background-color: white;"
