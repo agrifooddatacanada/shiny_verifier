@@ -1,5 +1,5 @@
 ui <- dashboardPage(
-  title = "Shiny Verifier",
+  title = "OCA Data Verifier",
   skin = "danger",
   scrollToTop = T,
   fullscreen = T,
@@ -13,7 +13,22 @@ ui <- dashboardPage(
     ),
     status = "white",
     div(style = "text-align: center;",
-        tags$b("Shiny Verifier")
+        tags$b("OCA Data Verifier")
+    ),
+    rightUi = tagList(
+      tags$li(
+        class = "dropdown",
+        div(
+          style = "display:inline-block; margin-top: 7px;",
+           tags$a(
+             href = github_repo_url,
+             target = "_blank",
+             style = "color: black; font-weight: bold; font-size: 18px;",
+             title = "View on GitHub",
+             icon("github")
+           )
+        )
+      )
     )
   ),
   
@@ -26,9 +41,9 @@ ui <- dashboardPage(
     status = "danger",
     sidebarMenu(
       menuItem(
-        "Upload",
+        "Home",
         tabName = "app",
-        icon = icon("upload")
+        icon = icon("house")
       )
     )
   ),
@@ -119,8 +134,18 @@ ui <- dashboardPage(
           column(12,
                  fluidRow(
                    column(12,
-                          img(src = "UoG_logo.png", height = "80px", align = "left", style = "margin-top: 10px;"),
-                          img(src = "ADC_logo.png", height = "100px", align = "right")
+                          tags$a(
+                            href = "https://uoguelph.ca",
+                            target = "_blank",
+                            title = "Visit University of Guelph",
+                            img(src = "UoG_logo.png", height = "70px", align = "left", style = "margin-top: 15px;")
+                          ),
+                          tags$a(
+                            href = "https://agrifooddatacanada.ca",
+                            target = "_blank",
+                            title = "Visit Agrifood Data Canada",
+                            img(src = "ADC_logo.png", height = "100px", align = "right")
+                          )
                    )
                  )
           ),
@@ -156,7 +181,7 @@ ui <- dashboardPage(
                            tags$iframe(
                              id = "OCA_Composer_iframe",
                              src = paste0(composer_url, "/oca-data-verifier"),
-                             height = "1200px",
+                             height = "2000px",
                              width = "100%",
                              style = "border: none; border-radius: 10px; overflow: hidden; background-color: white;"
                            )

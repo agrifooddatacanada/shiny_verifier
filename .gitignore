@@ -56,5 +56,5 @@ renv/
 .DS_Store
 
 # Generated upload files - keep only parent folder, ignore all contents
-upload_files/*
-!upload_files/.gitkeep
+verified_data/*
+!verified_data/.gitkeep

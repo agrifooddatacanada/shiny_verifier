@@ -18,14 +18,16 @@ if (composer_url == "") {
        "Please add the following line to ", renviron_path, ":\n",
        "OCA_COMPOSER_URL=[your-composer-url]")
 }
+# OCA_COMPOSER_URL is also used as the allowed origin
 
 # Load schema mapping from config file
 schema_config <- jsonlite::fromJSON("config/schemas.json")
-
-# OCA_COMPOSER_URL is used as the allowed origin
 
 # Create dropdown choices from the mapping
 schema_choices <- list()
 for (file_id in names(schema_config)) {
   schema_choices[schema_config[[file_id]]$name] <- file_id
 }
+
+# Repository URL for GitHub icon
+github_repo_url <- "https://github.com/agrifooddatacanada/shiny_verifier"

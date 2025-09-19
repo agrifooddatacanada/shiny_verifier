@@ -139,7 +139,6 @@ Security and privacy:
 
 Recommended token scopes for public repositories:
 - `public_repo`
-```
 
 ## Development Status
 
