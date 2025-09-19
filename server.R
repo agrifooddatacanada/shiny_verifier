@@ -10,7 +10,7 @@ server <- function(input, output, session) {
       timestamp <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
       
       # Create base upload directory
-      base_dir <- "verified_files"
+      base_dir <- "verified_data"
       if (!dir.exists(base_dir)) {
         dir.create(base_dir, recursive = TRUE)
       }

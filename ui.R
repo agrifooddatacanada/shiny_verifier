@@ -39,12 +39,12 @@ ui <- dashboardPage(
     tags$style(".nav-pills .nav-link.active {color: #fff; background-color: #dc3545;}"),
     
     tags$script(
-      HTML("
+      HTML(sprintf("
       // message listener for receiving data from iframe
       
       window.addEventListener('message', function(event) {
         // Check the origin of the message for security
-      	const allowedOrigins = ['http://localhost:3000', 'https://www.semanticengine.org'];
+      	const allowedOrigins = [%s];
         if (!allowedOrigins.includes(event.origin)) {
             // Origin is not allowed
               console.log('Message from unknown origin:', event.origin);
@@ -108,7 +108,7 @@ ui <- dashboardPage(
           console.error('shiny: Error in json2iframe handler:', error)
         }
       });
-    ")
+    ", paste0("'", composer_url, "'")))
     ),
     
     tabItems(

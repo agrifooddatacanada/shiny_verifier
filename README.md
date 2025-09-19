@@ -93,7 +93,9 @@ Or, if running a dev instance of OCA Composer locally:
 OCA_COMPOSER_URL=http://localhost:3000
 ```
 
-Note: Only include the base URL in the `.Renviron` file. The `/oca-data-verifier` path is automatically appended in the application code.
+Notes:
+- Only include the base URL in the `OCA_COMPOSER_URL` variable. The `/oca-data-verifier` path is automatically appended in the application code.
+- The `OCA_COMPOSER_URL` is used as the only allowed origin for security.
 
 ## Usage
 

@@ -22,6 +22,8 @@ if (composer_url == "") {
 # Load schema mapping from config file
 schema_config <- jsonlite::fromJSON("config/schemas.json")
 
+# OCA_COMPOSER_URL is used as the allowed origin
+
 # Create dropdown choices from the mapping
 schema_choices <- list()
 for (file_id in names(schema_config)) {
