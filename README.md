@@ -34,7 +34,7 @@ The application automatically saves verified data to a structured folder system:
 
 ### Folder Structure
 ```
-verified_files/
+verified_data/
 ├── 2025/
 │   ├── 08/
 │   │   ├── 2025-08-15T11-54-35Z_sensor_aggregation_scr.csv
