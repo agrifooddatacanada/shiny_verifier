@@ -23,10 +23,10 @@ The application uses a modern UI built with `bs4Dash` and integrates with the [O
 - Support for multiple data formats
 - Integration with OCA Composer for schema verification
 - Local data processing (data never leaves the user's computer)
-- **Automatic file saving with organized folder structure**
-- **ISO 8601 timestamp-based file naming**
-- **Download functionality for verified data**
-- **Submit verified data directly to GitHub (via modal form)**
+- Automatic file saving with organized folder structure
+- ISO 8601 timestamp-based file naming
+- Download functionality for verified data
+- Submit verified data directly to GitHub (via modal form)
 
 ## File Organization
 
