@@ -106,7 +106,7 @@ shiny::runApp()
    - Select a schema from the dropdown menu
    - Click "Start data verification" to begin verification
    - View verification results in the interactive interface
-   - Verified data is automatically saved to the `verified_files` directory
+   - Verified data is automatically saved to the `verified_data` directory
    - Use the download button to get a copy of the verified data
    - Optionally click "Submit to GitHub" to upload the verified CSV to a public repository
 
