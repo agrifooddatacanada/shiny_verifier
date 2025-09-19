@@ -91,7 +91,7 @@ server <- function(input, output, session) {
         )
       )
       
-      showNotification("Schema sent to validator", type = "message")
+      showNotification("Schema sent to verifier", type = "message")
       
     }, error = function(e) {
       showNotification(paste("Error preparing schema:", e$message), type = "error")
@@ -138,7 +138,7 @@ server <- function(input, output, session) {
       shinyjs::show("verified_data_display", anim = TRUE, animType = 'slide')
       
       showNotification(
-        paste0("Validation complete! Loaded ", nrow(verified_df), " rows and ", 
+        paste0("Verification complete! Loaded ", nrow(verified_df), " rows and ", 
                ncol(verified_df), " columns."), 
         type = "message"
       )
@@ -165,6 +165,20 @@ server <- function(input, output, session) {
     )
   })
   
+  # Clear token data when modal is cancelled
+  observeEvent(input$modal_cancel, {
+    token_owner_info(NULL)
+    token_error_message(NULL)
+    removeModal()
+  })
+  
+  # Clear token data when confirmation modal is cancelled
+  observeEvent(input$confirm_modal_cancel, {
+    token_owner_info(NULL)
+    token_error_message(NULL)
+    removeModal()
+  })
+  
   # Show GitHub submission modal
   observeEvent(input$submit_to_github, {
     req(verified_data())
@@ -185,21 +199,58 @@ server <- function(input, output, session) {
       size = "l",
       easyClose = FALSE,
       footer = tagList(
-        modalButton("Cancel"),
+        actionButton("modal_cancel", "Cancel", class = "btn-secondary"),
         actionButton("confirm_github_upload", "Submit", class = "btn-primary")
       ),
       fluidRow(
         column(6,
-               textInput("github_owner", "Repository Owner (user or org)", value = ""),
-               textInput("github_repo", "Repository Name", value = ""),
-               textInput("github_branch", "Branch", value = "main"),
-               textInput("github_dir", "Destination Directory in Repo", value = "verified_data")
+               textInput("github_owner", "Repository Owner (user or org)", value = "", width = '100%')
         ),
         column(6,
-               textInput("github_author_name", "Committer Name (optional)", value = "Shiny Verifier Demo"),
-               textInput("github_author_email", "Committer Email (optional)", value = "noreply@example.com"),
-               textInput("github_commit_message", "Commit Message", value = default_message),
-               passwordInput("github_token", "GitHub Personal Access Token", value = "")
+               textInput("github_repo", "Repository Name", value = "", width = '100%')
+        )
+      ),
+      fluidRow(
+        column(6,
+               textInput("github_branch", "Branch", value = "main", width = '100%')
+        ),
+        column(6,
+               textInput("github_dir", "Destination Directory in Repo", value = "verified_data", width = '100%')
+        )
+      ),
+      fluidRow(
+        column(12,
+               passwordInput("github_token", "GitHub Personal Access Token", value = "", width = '100%')
+        )
+      ),
+      fluidRow(
+        column(12,
+               helpText("Note: Committer name and email will be automatically retrieved from your GitHub token.")
+        )
+      ),
+      fluidRow(
+        column(12,
+               conditionalPanel(
+                 condition = "output.token_validated",
+                 div(style = "margin-top: 10px; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px;",
+                     h5("Token Validated", style = "color: #155724; margin: 0;"),
+                     textOutput("token_owner_display")
+                 )
+               ),
+               conditionalPanel(
+                 condition = "output.token_error",
+                 div(style = "margin-top: 10px; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;",
+                     h5("Token Error", style = "color: #721c24; margin: 0;"),
+                     textOutput("token_error_message")
+                 )
+               )
+        )
+      ),
+      tags$br(),
+      fluidRow(
+        column(12,
+               textAreaInput("github_commit_message", "Commit Message", value = default_message, 
+                           rows = 3, resize = "vertical", width = '100%')
         )
       ),
       tags$hr(),
@@ -207,8 +258,91 @@ server <- function(input, output, session) {
     ))
   })
   
-  # Confirm upload handler
+  # Reactive values to store token owner info and error
+  token_owner_info <- reactiveVal(NULL)
+  token_error_message <- reactiveVal(NULL)
+  
+  # Validate token and get owner info when token is entered
+  observeEvent(input$github_token, {
+    req(input$github_token)
+    
+    if (nchar(input$github_token) > 10) {  # Basic validation - GitHub tokens are longer
+      tryCatch({
+        user_resp <- httr::GET(
+          "https://api.github.com/user",
+          httr::add_headers(
+            Authorization = paste("Bearer", input$github_token),
+            Accept = "application/vnd.github+json"
+          )
+        )
+        
+        status_code <- httr::status_code(user_resp)
+        # cat("GitHub API status code:", status_code, "\n")
+        
+        if (status_code == 200) {
+          user_info <- httr::content(user_resp, as = "parsed")
+          # cat("User info retrieved for:", user_info$login, "\n")
+          token_owner_info(list(
+            login = user_info$login,
+            name = ifelse(is.null(user_info$name) || user_info$name == "", user_info$login, user_info$name),
+            email = ifelse(is.null(user_info$email) || user_info$email == "", paste0(user_info$login, "@users.noreply.github.com"), user_info$email)
+          ))
+          token_error_message(NULL)  # Clear any previous error
+        } else {
+          error_content <- httr::content(user_resp, as = "text")
+          cat("GitHub API error:", status_code, "-", error_content, "\n")
+          token_owner_info(NULL)
+          token_error_message(paste("GitHub API error", status_code, ":", error_content))
+        }
+      }, error = function(e) {
+        # cat("Error validating token:", e$message, "\n")
+        token_owner_info(NULL)
+        token_error_message(paste("Network error:", e$message))
+      })
+    } else {
+      token_owner_info(NULL)
+      token_error_message(NULL)
+    }
+  })
+  
+  # Show confirmation modal before upload
   observeEvent(input$confirm_github_upload, {
+    req(verified_data())
+    
+    # Check if we have token owner info
+    if (is.null(token_owner_info())) {
+      showNotification("Please enter a valid GitHub token first.", type = "error")
+      return()
+    }
+    
+    # Show confirmation modal
+    showModal(modalDialog(
+      title = "Confirm GitHub Upload",
+      size = "m",
+      easyClose = FALSE,
+      footer = tagList(
+        actionButton("confirm_modal_cancel", "Cancel", class = "btn-secondary"),
+        actionButton("final_confirm_upload", "Confirm Upload", class = "btn-primary")
+      ),
+      div(
+        h4("Upload Details:"),
+        p(strong("Repository:"), paste0(input$github_owner, "/", input$github_repo)),
+        p(strong("Branch:"), input$github_branch),
+        p(strong("Path:"), file.path(input$github_dir, format(Sys.time(), "%Y"), format(Sys.time(), "%m"), 
+                                   paste0(format(Sys.time(), "%Y-%m-%dT%H-%M-%SZ"), "_", 
+                                          tools::file_path_sans_ext(basename(schema_config[[input$schema_choice]]$path)), ".csv"))),
+        p(strong("Commit Message:"), input$github_commit_message),
+        tags$hr(),
+        h4("Committer Information:"),
+        p(strong("Name:"), token_owner_info()$name),
+        p(strong("Email:"), token_owner_info()$email),
+        p(strong("Username:"), token_owner_info()$login)
+      )
+    ))
+  })
+  
+  # Final upload handler
+  observeEvent(input$final_confirm_upload, {
     req(verified_data())
     
     tryCatch({
@@ -219,9 +353,14 @@ server <- function(input, output, session) {
       if (is.null(input$github_repo) || input$github_repo == "") {
         showNotification("Please enter the repository name.", type = "error"); return()
       }
-      if (is.null(input$github_token) || input$github_token == "") {
-        showNotification("Please enter the GitHub personal access token.", type = "error"); return()
+      if (is.null(token_owner_info())) {
+        showNotification("Please enter a valid GitHub token.", type = "error"); return()
       }
+      
+      # Use stored token owner info
+      token_owner <- token_owner_info()$login
+      token_name <- token_owner_info()$name
+      token_email <- token_owner_info()$email
       
       # Build filename and path
       selected_file_id <- input$schema_choice
@@ -252,8 +391,8 @@ server <- function(input, output, session) {
       commit_message <- ifelse(is.null(input$github_commit_message) || input$github_commit_message == "",
                                paste("Add verified data:", filename), input$github_commit_message)
       committer <- list(
-        name = ifelse(is.null(input$github_author_name) || input$github_author_name == "", "Shiny Verifier Demo", input$github_author_name),
-        email = ifelse(is.null(input$github_author_email) || input$github_author_email == "", "noreply@example.com", input$github_author_email)
+        name = token_name,
+        email = token_email
       )
       
       body <- list(
@@ -278,8 +417,16 @@ server <- function(input, output, session) {
       content_json <- tryCatch(jsonlite::fromJSON(content_txt), error = function(e) NULL)
       
       if (status == 201) {
-        removeModal()
-        showNotification("File uploaded to GitHub successfully.", type = "message")
+        # Clear all token-related data
+        token_owner_info(NULL)
+        token_error_message(NULL)
+        
+        # Force garbage collection to free memory
+        gc()
+        
+        removeModal()  # Close confirmation modal
+        removeModal()  # Close original modal
+        showNotification(paste("File uploaded to GitHub successfully as", token_owner), type = "message")
       } else {
         msg <- if (!is.null(content_json$message)) content_json$message else paste("GitHub API error (status", status, ")")
         showNotification(paste("Upload failed:", msg), type = "error")
@@ -291,6 +438,27 @@ server <- function(input, output, session) {
     }, error = function(e) {
       showNotification(paste("Unexpected error:", e$message), type = "error")
     })
+  })
+  
+  # Token validation outputs
+  output$token_validated <- reactive({
+    !is.null(token_owner_info())
+  })
+  outputOptions(output, "token_validated", suspendWhenHidden = FALSE)
+  
+  output$token_error <- reactive({
+    !is.null(token_error_message())
+  })
+  outputOptions(output, "token_error", suspendWhenHidden = FALSE)
+  
+  output$token_owner_display <- renderText({
+    if (!is.null(token_owner_info())) {
+      paste0("Logged in as: ", token_owner_info()$name, " (", token_owner_info()$login, ")")
+    }
+  })
+  
+  output$token_error_message <- renderText({
+    token_error_message()
   })
   
   # Download handler for verified data

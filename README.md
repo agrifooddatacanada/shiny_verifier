@@ -120,18 +120,22 @@ When verified data is available, a "Submit to GitHub" button appears in the Veri
 - Repository Name (required)
 - Branch (defaults to `main`)
 - Destination Directory in Repo (defaults to `verified_data`)
-- Committer Name/Email (optional; defaults provided)
 - Commit Message (default includes filename)
 - GitHub Personal Access Token (required; entered in a password field and hidden)
 
 What happens on submit:
-- The app creates a filename like `YYYY-MM-DDTHH-MM-SSZ_table.csv` and a path `<dir>/<YYYY>/<MM>/<filename>`. If the destination folder does not exist, it creates one.
-- The CSV is encoded and uploaded using the GitHub Contents API (`PUT /repos/{owner}/{repo}/contents/{path}`).
-- On success, the app shows a notification. On failure, it shows the GitHub API error message.
+- The app validates your GitHub token and retrieves your profile information
+- A confirmation modal shows all upload details including your GitHub username and email
+- The app creates a filename like `YYYY-MM-DDTHH-MM-SSZ_table.csv` and a path `<dir>/<YYYY>/<MM>/<filename>`
+- The CSV is encoded and uploaded using the GitHub Contents API (`PUT /repos/{owner}/{repo}/contents/{path}`)
+- The commit is made using your actual GitHub name and email from your profile
+- On success, both modals close and the app shows a success notification
 
 Security and privacy:
-- The values you enter in the modal (including the token) are used only for that one submission and are not saved or persisted anywhere.
-- The token input uses a password-style field so it will not display during demos.
+- The values you enter in the modal (including the token) are used only for that one submission and are not saved or persisted anywhere
+- All token-related data is immediately cleared from memory after upload or cancellation
+- The token input uses a password-style field so it will not display during demos
+- Committer name and email are automatically retrieved from your GitHub profile for authenticity
 
 Recommended token scopes for public repositories:
 - `public_repo`

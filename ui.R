@@ -50,7 +50,7 @@ ui <- dashboardPage(
               console.log('Message from unknown origin:', event.origin);
               return;
         }
-        // Check the type of the message if this is verified data from the validator
+        // Check the type of the message if this is verified data from the verifier
         if (event.data && event.data.type === 'VERIFIED_DATA') {
           // Debug: log the data type
           console.log('Data type:', typeof event.data.data);
@@ -176,7 +176,7 @@ ui <- dashboardPage(
                            elevation = 2,
                            solidHeader = F,
                            status = "success",
-                           p("Data validation completed successfully."),
+                           p("Data verification completed successfully."),
                            downloadButton("download_verified", "Download Verified Data"),
                            actionButton("submit_to_github", tagList(icon("github"), "Submit to GitHub")),
                            br(),
