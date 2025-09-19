@@ -177,8 +177,8 @@ ui <- dashboardPage(
                            solidHeader = F,
                            status = "success",
                            p("Data validation completed successfully."),
-                           downloadButton("download_verified", "Download Verified Data", 
-                                          class = "btn-success"),
+                           downloadButton("download_verified", "Download Verified Data"),
+                           actionButton("submit_to_github", tagList(icon("github"), "Submit to GitHub")),
                            br(),
                            br(),
                            DT::dataTableOutput("verified_data_table")
