@@ -7,7 +7,7 @@ library(DT)
 # Get Composer URL from environment variable
 renviron_path <- file.path(getwd(), ".Renviron")
 if (!file.exists(renviron_path)) {
-  stop("Could not find .Renviron file at: ", renviron_path, "\n",
+  message("Could not find .Renviron file at: ", renviron_path, "\n",
        "Please create the file and set the OCA_COMPOSER_URL environment variable.")
 }
 
